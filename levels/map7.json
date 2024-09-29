@@ -1,0 +1,92 @@
+{
+    "player": {
+        "x": 130,
+        "y": 265,
+        "width": 55,
+        "height": 85,
+        "dy": 0,
+        "onGround": false
+    },
+    "platforms": [
+        {
+            "x": 110,
+            "y": 350,
+            "width": 360,
+            "height": 20
+        },
+        {
+            "x": 505,
+            "y": 490,
+            "width": 680,
+            "height": 20
+        },
+        {
+            "x": 1195,
+            "y": 405,
+            "width": 80,
+            "height": 20
+        },
+        {
+            "x": 1280,
+            "y": 345,
+            "width": 240,
+            "height": 20
+        },
+        {
+            "x": 650,
+            "y": 250,
+            "width": 120,
+            "height": 20
+        },
+        {
+            "x": 970,
+            "y": 250,
+            "width": 120,
+            "height": 20
+        }
+    ],
+    "enemies": [
+        {
+            "x": 520,
+            "y": 455,
+            "width": 32,
+            "height": 32,
+            "direction": 1,
+            "current_walk": 0,
+            "walk_area": 200
+        },
+        {
+            "x": 740,
+            "y": 455,
+            "width": 32,
+            "height": 32,
+            "direction": 1,
+            "current_walk": 0,
+            "walk_area": 200
+        },
+        {
+            "x": 965,
+            "y": 455,
+            "width": 32,
+            "height": 32,
+            "direction": 1,
+            "current_walk": 0,
+            "walk_area": 200
+        }
+    ],
+    "enemies2": [
+        {
+            "x": 680,
+            "y": 215,
+            "width": 32,
+            "height": 32
+        },
+        {
+            "x": 1000,
+            "y": 215,
+            "width": 32,
+            "height": 32
+        }
+    ],
+    "bonusBoxes": []
+}

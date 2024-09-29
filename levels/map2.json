@@ -1,0 +1,77 @@
+{
+    "player": {
+        "x": 130,
+        "y": 265,
+        "width": 55,
+        "height": 85,
+        "dy": 0,
+        "onGround": false
+    },
+    "platforms": [
+        {
+            "x": 110,
+            "y": 350,
+            "width": 320,
+            "height": 20
+        },
+        {
+            "x": 1115,
+            "y": 350,
+            "width": 360,
+            "height": 20
+        },
+        {
+            "x": 475,
+            "y": 400,
+            "width": 600,
+            "height": 20
+        },
+        {
+            "x": 460,
+            "y": 275,
+            "width": 80,
+            "height": 20
+        },
+        {
+            "x": 540,
+            "y": 235,
+            "width": 80,
+            "height": 20
+        },
+        {
+            "x": 740,
+            "y": 200,
+            "width": 80,
+            "height": 20
+        },
+        {
+            "x": 1115,
+            "y": 100,
+            "width": 160,
+            "height": 20
+        }
+    ],
+    "enemies": [],
+    "enemies2": [
+        {
+            "x": 760,
+            "y": 370,
+            "width": 32,
+            "height": 32
+        },
+        {
+            "x": 1130,
+            "y": 70,
+            "width": 32,
+            "height": 32
+        }
+    ],
+    "bonusBoxes": [
+        {
+            "x": 760,
+            "y": 220,
+            "width": 32,
+            "height": 32
+        }
+    ]
+}
