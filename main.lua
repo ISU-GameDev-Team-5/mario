@@ -39,6 +39,7 @@ local start_x, start_y
 local logs = {}
 
 function addLog(message)
+    logs={}
     table.insert(logs, message)
 end
 
@@ -53,6 +54,11 @@ local count_to_triple = 0
 local is_menu_mode = false
 
 local level = 1
+
+local bonus_delete_time = 0
+local bonus_to_delete_i = -1
+local enemy1_delete_time = 0
+local enemy1_delete_i = 0
 
 --------- MENU -----------
 local levels = {}  -- Таблица с состоянием уровней
@@ -119,11 +125,16 @@ function love.load()
     love.window.setTitle("Mario")
     love.window.setMode(800, 600)
 
+    dead_player = love.audio.newSource("assets/dead_player.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
+    mob_dead = love.audio.newSource("assets/mob_dead.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
     sound_jump = love.audio.newSource("assets/jump.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
     sound_back_soundtrack = love.audio.newSource("assets/back_music.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
     sound_back_birds = love.audio.newSource("assets/birds.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
+    sound_bonus = love.audio.newSource("assets/bonus_sound2.mp3", "static")  -- замените 'yourfile.mp3' на имя вашего файла
     sound_back_soundtrack:setVolume(0.3)
     sound_back_birds:setVolume(0.5)
+    sound_bonus:setVolume(0.7)
+    mob_dead:setVolume(0.5)
     
     sound_back_soundtrack:play()
     sound_back_birds:play()
@@ -214,7 +225,6 @@ function openLevel(str)
     platforms = {}
     level_length_px =0
     for _, platform in ipairs(levelData.platforms) do
-        addLog(level_length_px)
         level_length_px = math.max(platform.x + platform.width+1000, level_length_px)
         table.insert(platforms, platform)
     end
@@ -440,6 +450,7 @@ function updateBullets(dt)
                 player.anim = player.animations.dead      
             end
             is_killed_by_enemy = true
+            dead_player:play()
             table.remove(bullets, i)  -- Удаляем пулю
         end
 
@@ -657,32 +668,59 @@ function love.update(dt)
         player.x = level_length_px - player.width
     end
 
+    if(enemy1_delete_time > 1) then  
+        enemy1_delete_time=enemy1_delete_time-1
+    elseif enemy1_delete_time == 1 then 
+        table.remove(enemies, enemy1_delete_i)
+        enemy1_delete_time = 0
+    end
+
     -- Движение врагов
-    for _, enemy in ipairs(enemies) do
+    for i, enemy in ipairs(enemies) do
         local new_x = enemy.x + enemySpeed * enemy.direction * dt
 
         -- Изменение направления врагов при столкновении с границами
-        if enemy.x < 0 or enemy.x > level_length_px - enemy.width or enemy.current_walk >= enemy.walk_area then
-            enemy.direction = -enemy.direction
-            enemy.current_walk = 0
-        else 
-            enemy.current_walk = enemy.current_walk + math.abs(new_x - enemy.x)
-        end
+        
+        if(enemy1_delete_time==0 or (enemy1_delete_time>0 and enemy1_delete_i~=i)) then 
+            if enemy.x < 0 or enemy.x > level_length_px - enemy.width or enemy.current_walk >= enemy.walk_area then
+                enemy.direction = -enemy.direction
+                enemy.current_walk = 0
+            else 
+                enemy.current_walk = enemy.current_walk + math.abs(new_x - enemy.x)
+            end
 
-        enemy.x = new_x
+            enemy.x = new_x
 
         -- Проверка столкновений с игроком
-        if player.x < enemy.x + enemy.width and
-           player.x + player.width > enemy.x and
-           player.y < enemy.y + enemy.height and
-           player.y + player.height > enemy.y then
-            -- Если происходит столкновение, игрок "падает"
-            if(not(is_killed_by_enemy)) then 
-                player.dy = -200
-                player.anim = player.animations.dead      
+        --addLog(player.x)
+        --addLog(enemy.x)
+        --addLog(player.y + player.height)
+        --addLog(enemy.y + enemy.height)
+            if player.x < enemy.x + enemy.width and
+            player.x + player.width > enemy.x and
+            player.y + player.height + 20 < enemy.y and 
+            player.y + player.height + 22 > enemy.y then
+                -- Если происходит столкновение, игрок "падает"
+                if(not(is_killed_by_enemy)) then 
+                    enemy1_delete_time = 200
+                    enemy1_delete_i = i
+                    player.dy = -500
+                    mob_dead:play()
+                end
+                --handlePlayerDeath()
+            elseif player.x < enemy.x + enemy.width and
+            player.x + player.width > enemy.x and
+            player.y < enemy.y + enemy.height and
+            player.y + player.height > enemy.y then
+                -- Если происходит столкновение, игрок "падает"
+                if(not(is_killed_by_enemy)) then 
+                    player.dy = -200
+                    player.anim = player.animations.dead      
+                end
+                is_killed_by_enemy = true
+                dead_player:play()
+                --handlePlayerDeath()
             end
-            is_killed_by_enemy = true
-            --handlePlayerDeath()
         end
     end
 
@@ -690,20 +728,14 @@ function love.update(dt)
     updateBullets(dt)
     for _, enemy in ipairs(enemies2) do
         updateEnemyFire(enemy, dt, player)
-        --local new_x = enemy.x + enemySpeed * enemy.direction * dt
---
-        ---- Изменение направления врагов при столкновении с границами
-        --if enemy.x < 0 or enemy.x > level_length_px - enemy.width or enemy.current_walk >= enemy.walk_area then
-        --    enemy.direction = -enemy.direction
-        --    enemy.current_walk = 0
-        --else 
-        --    enemy.current_walk = enemy.current_walk + math.abs(new_x - enemy.x)
-        --end
---
-        --enemy.x = new_x
-
-        -- Проверка столкновений с игроком
         if player.x < enemy.x + enemy.width and
+           player.x + player.width > enemy.x and
+           player.y + player.height - 20 < enemy.y and 
+           player.y + player.height > enemy.y then
+            -- Если происходит столкновение, игрок "падает"
+            addLog("EnemyKilled")
+            --handlePlayerDeath()
+        elseif player.x < enemy.x + enemy.width and
            player.x + player.width > enemy.x and
            player.y < enemy.y + enemy.height and
            player.y + player.height > enemy.y then
@@ -713,8 +745,17 @@ function love.update(dt)
                 player.anim = player.animations.dead      
             end
             is_killed_by_enemy = true
+            dead_player:play()
             --handlePlayerDeath()
         end
+    end
+
+    if(bonus_delete_time > 1) then  
+        bonus_delete_time=bonus_delete_time-1
+    elseif bonus_delete_time == 1 then 
+        addLog('bonus_delete_time')
+        table.remove(bonusBoxes, bonus_to_delete_i)
+        bonus_delete_time = 0
     end
 
     -- Проверка столкновений с бонусными ящиками (как с платформами)
@@ -740,9 +781,13 @@ function love.update(dt)
             player.y < box.y + box.height and -- Верхняя часть игрока выше нижней части ящика
             player.y + player.height > box.y + box.height then -- Игрок касается именно нижней части ящика
                 -- Если игрок ударяет ящик снизу, то ящик удаляется (собирается)
-                bonus_count = bonus_count + 1
-                jumpStrength = jumpStrength - 10
-                table.remove(bonusBoxes, i)
+                if(bonus_delete_time == 0) then
+                    sound_bonus:play()
+                    bonus_count = bonus_count + 1
+                    jumpStrength = jumpStrength - 10
+                    bonus_delete_time = 300
+                    bonus_to_delete_i = i
+                end
             end
 
             -- Боковые столкновения с ящиком (чтобы предотвратить прохождение через него)
@@ -941,10 +986,20 @@ function love.draw()
 
     love.graphics.setColor(1, 1, 1, 1) 
 
-    for _, enemy in ipairs(enemies) do
+    for i, enemy in ipairs(enemies) do
         --love.graphics.rectangle("fill", enemy.x, enemy.y, enemy.width, enemy.height)
-        enemy.anim:draw(enemy.spriteSheet, enemy.x + (enemy.direction == 1 and 0 or enemy.width), enemy.y - 53, 0, -(enemy.direction == 1 and -1 or 1)*0.35, 0.35)
+        addLog(i.." "..enemy1_delete_i)
+        if(i == enemy1_delete_i and enemy1_delete_time > 0) then
+            love.graphics.setColor(1, 1, 1,enemy1_delete_time/200)
+            enemy.anim:draw(enemy.spriteSheet, enemy.x + (enemy.direction == 1 and 0 or enemy.width), enemy.y - 53 + enemy1_delete_time - 200, 0, -(enemy.direction == 1 and -1 or 1)*0.35, 0.35)
+        else 
+            love.graphics.setColor(1, 1, 1, 1) 
+            enemy.anim:draw(enemy.spriteSheet, enemy.x + (enemy.direction == 1 and 0 or enemy.width), enemy.y - 53, 0, -(enemy.direction == 1 and -1 or 1)*0.35, 0.35)
+        end
+       
     end
+
+    love.graphics.setColor(1, 1, 1, 1) 
 
     for _, enemy in ipairs(enemies2) do
         --love.graphics.rectangle("fill", enemy.x, enemy.y, enemy.width, enemy.height)
@@ -958,8 +1013,13 @@ function love.draw()
     end
 
     --love.graphics.setColor(255, 255, 0) -- Желтый цвет для бонусных ящиков
-    for _, box in ipairs(bonusBoxes) do
-        love.graphics.draw(beeBonusSprite, box.x - 20, box.y - 20, 0, 0.1, 0.1)
+    for i, box in ipairs(bonusBoxes) do
+        if(i == bonus_to_delete_i and bonus_delete_time > 0) then
+            love.graphics.setColor(1, 1, 1,bonus_delete_time/300)
+            love.graphics.draw(beeBonusSprite, box.x - 20, box.y - 20 + 300 - bonus_delete_time, 0, 0.1, 0.1)
+        else 
+            love.graphics.draw(beeBonusSprite, box.x - 20, box.y - 20, 0, 0.1, 0.1)
+        end
     end
 
     drawBullets()
